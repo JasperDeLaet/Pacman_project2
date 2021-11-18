@@ -81,18 +81,23 @@ class ReflexAgent(Agent):
         for ghostState in newGhostStates:
             newGhostDistances.append(util.manhattanDistance(newPos, ghostState.getPosition()))
 
+        # feature 1: minimum of the ghost distances to the pacman
         f1 = min(newGhostDistances)
         if f1 == 0:
             f1 += 1
+        # feature 2: minimum distance to a piece of food
         f2 = 1
         if len(newFoodDistances) != 0:
             f2 = min(newFoodDistances)
+        # feature 3: amount of food
         f3 = len(newFoodList)
+        # feature 4: lowest amount of time a ghost will still be scared
         f4 = 0
         if len(newScaredTimes) != 0:
             f4 = min(newScaredTimes)
 
-        return -2/f1 + 1/(2*f2) - f3 + f4
+        return -1/f1 + 1/f2 - 2 * f3 + f4
+
 
 def scoreEvaluationFunction(currentGameState):
     """
@@ -103,6 +108,7 @@ def scoreEvaluationFunction(currentGameState):
     (not reflex agents).
     """
     return currentGameState.getScore()
+
 
 class MultiAgentSearchAgent(Agent):
     """
@@ -123,6 +129,7 @@ class MultiAgentSearchAgent(Agent):
         self.index = 0 # Pacman is always agent index 0
         self.evaluationFunction = util.lookup(evalFn, globals())
         self.depth = int(depth)
+
 
 class MinimaxAgent(MultiAgentSearchAgent):
     """
@@ -159,7 +166,6 @@ class MinimaxAgent(MultiAgentSearchAgent):
         if gameState.isWin() or gameState.isLose():
             return self.evaluationFunction(gameState), None
 
-        amount_of_agents = gameState.getNumAgents()
         # checking if is at max depth after expanding the last index
         if depth == self.depth and index == 0:
             return self.evaluationFunction(gameState), None
@@ -214,6 +220,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 v_action = legalAction
         return v, v_action
 
+
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
     Your minimax agent with alpha-beta pruning (question 3)
@@ -230,7 +237,6 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         if gameState.isWin() or gameState.isLose():
             return self.evaluationFunction(gameState), None
 
-        amount_of_agents = gameState.getNumAgents()
         # checking if is at max depth after expanding the last index
         if depth == self.depth and index == 0:
             return self.evaluationFunction(gameState), None
@@ -319,7 +325,6 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         return self.exp_value(gameState, depth, index)
 
     def max_value(self, gameState, depth, index):
-
         # max_value call means next depth
         depth += 1
         legalActions = gameState.getLegalActions(index)
@@ -343,8 +348,6 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
 
         if len(legalActions) == 0:
             return self.evaluationFunction(gameState), None
-
-
         amount_of_agents = gameState.getNumAgents()
 
         new_index = None
@@ -363,6 +366,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
             v += p * self.value(successor, depth, new_index)[0]
         return v, v_action
 
+
 def betterEvaluationFunction(currentGameState):
     """
     Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
@@ -371,7 +375,35 @@ def betterEvaluationFunction(currentGameState):
     DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    position = currentGameState.getPacmanPosition()
+    Food = currentGameState.getFood()
+    ghostStates = currentGameState.getGhostStates()
+    scaredTimes = [ghostState.scaredTimer for ghostState in ghostStates]
+    foodList = Food.asList()
+    foodDistances = []
+    for food in foodList:
+        foodDistances.append(util.manhattanDistance(position, food))
+
+    ghostDistances = []
+    for ghostState in ghostStates:
+        ghostDistances.append(util.manhattanDistance(position, ghostState.getPosition()))
+
+    # feature 1: minimum of the ghost distances to the pacman
+    f1 = min(ghostDistances)
+    if f1 == 0:
+        f1 += 1
+    # feature 2: minimum distance to a piece of food
+    f2 = 1
+    if len(foodDistances) != 0:
+        f2 = min(foodDistances)
+    # feature 3: amount of food
+    f3 = len(foodList)
+    # feature 4: lowest amount of time a ghost will still be scared
+    f4 = 0
+    if len(scaredTimes) != 0:
+        f4 = min(scaredTimes)
+
+    return -1/f1 + 1/f2 - f3 + f4
 
 # Abbreviation
 better = betterEvaluationFunction
